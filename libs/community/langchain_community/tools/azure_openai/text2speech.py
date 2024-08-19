@@ -2,10 +2,8 @@ from __future__ import annotations
 
 import logging
 import tempfile
-import os
-from typing import Any, Dict, Optional
+from typing import Dict
 
-from langchain_core.callbacks import CallbackManagerForToolRun
 from langchain_core.pydantic_v1 import root_validator
 from langchain_core.tools import BaseTool
 from langchain_core.utils import get_from_dict_or_env
@@ -46,14 +44,6 @@ class AzureOpenAIText2SpeechTool(BaseTool):
             values, "openai_endpoint", "AZURE_OPENAI_ENDPOINT"
         )
 
-        #azure_openai_key = os.environ.get('AZURE_OPENAI_API_KEY')
-        #openai_endpoint = os.environ.get('AZURE_OPENAI_ENDPOINT')
-        
-        #if not azure_openai_key:
-        #    raise ValueError("API key is required")
-        #if not openai_endpoint:
-        #    raise ValueError("Endpoint is required")
-
         try:
             import httpx
 
@@ -62,6 +52,8 @@ class AzureOpenAIText2SpeechTool(BaseTool):
                 "httpx is not installed. "
                 "Run `pip install httpx` to install."
             )
+        
+        return values
     
 
     def _text2speech(self, text: str, speech_voice: str, response_format: str, speech_speed: str) -> str:
@@ -100,7 +92,6 @@ class AzureOpenAIText2SpeechTool(BaseTool):
     def _run(
         self,
         query: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Use the tool."""
         try:
