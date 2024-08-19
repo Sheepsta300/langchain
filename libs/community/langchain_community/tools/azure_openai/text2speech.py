@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import logging
 import tempfile
+import os
 from typing import Any, Dict, Optional
 
+from langchain_core.callbacks import CallbackManagerForToolRun
 from langchain_core.pydantic_v1 import root_validator
 from langchain_core.tools import BaseTool
-#from langchain_core.utils import get_from_dict_or_env
+from langchain_core.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
 
@@ -18,11 +20,11 @@ class AzureOpenAIText2SpeechTool(BaseTool):
     https://learn.microsoft.com/en-us/azure/ai-services/openai/text-to-speech-quickstart?tabs=command-line
     """
 
-    azure_openai_key: Optional[str] = None
-    openai_endpoint: Optional[str] = None
-    speech_voice: Optional[str] = "alloy" 
-    response_format: Optional[str] = "mp3"  
-    speech_speed: Optional[str] = "1"
+    azure_openai_key: str = ""
+    openai_endpoint: str = ""
+    speech_voice: str = "alloy" 
+    response_format: str = "mp3"  
+    speech_speed: str = "1"
 
     name: str = "azure_openai_text2speech"
     description: str = (
@@ -33,20 +35,24 @@ class AzureOpenAIText2SpeechTool(BaseTool):
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and endpoint exists in environment."""
+        if values is None:
+            raise ValueError("No values were provided to the validator")
 
-        try:
-            import os
-        except ImportError:
-            pass
-        #values.get('openai_endpoint') or
-        #values.get('azure_openai_key') or 
-        azure_openai_key = os.environ.get('AZURE_OPENAI_API_KEY')
-        openai_endpoint = os.environ.get('AZURE_OPENAI_ENDPOINT')
+        azure_openai_key = get_from_dict_or_env(
+            values, "azure_openai_key", "AZURE_OPENAI_API_KEY"
+        )
+
+        openai_endpoint = get_from_dict_or_env(
+            values, "openai_endpoint", "AZURE_OPENAI_ENDPOINT"
+        )
+
+        #azure_openai_key = os.environ.get('AZURE_OPENAI_API_KEY')
+        #openai_endpoint = os.environ.get('AZURE_OPENAI_ENDPOINT')
         
-        if not azure_openai_key:
-            raise ValueError("API key is required")
-        if not openai_endpoint:
-            raise ValueError("Endpoint is required")
+        #if not azure_openai_key:
+        #    raise ValueError("API key is required")
+        #if not openai_endpoint:
+        #    raise ValueError("Endpoint is required")
 
         try:
             import httpx
@@ -56,13 +62,9 @@ class AzureOpenAIText2SpeechTool(BaseTool):
                 "httpx is not installed. "
                 "Run `pip install httpx` to install."
             )
-
+    
 
     def _text2speech(self, text: str, speech_voice: str, response_format: str, speech_speed: str) -> str:
-        try:
-            import httpx
-        except ImportError:
-            pass
         
         url = f"{self.openai_endpoint}/openai/deployments/tts/audio/speech?api-version=2024-02-15-preview"
         headers = {
@@ -76,22 +78,29 @@ class AzureOpenAIText2SpeechTool(BaseTool):
             "response_format" : response_format,
             "speed" : speech_speed
         }
+        
+        try:
+            import httpx
+            response = httpx.post(url, headers=headers, json=data)
+            response.raise_for_status()  # Raise an error for HTTP error responses
 
-        # Make the POST request
-        response = httpx.post(url, headers=headers, json=data)
-
-        if response.status_code == 200:
-            with tempfile.NamedTemporaryFile(
-                mode="wb", suffix=response_format, delete=False
-            ) as f:
-                f.write(response.content)
-            return f.name
-        else:
-            return f"Speech synthesis failed: {response.content}"
-
+            if response.status_code == 200:
+                with tempfile.NamedTemporaryFile(
+                    mode="wb", suffix=f".{response_format}", delete=False
+                ) as f:
+                    f.write(response.content)
+                return f.name
+            else:
+                return f"Speech synthesis failed with status code {response.status_code}: {response.text}"
+        
+        except httpx.RequestError as e:
+            logger.error(f"An error occurred while making the request: {e}")
+            return f"Request failed: {e}"
+        
     def _run(
         self,
         query: str,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Use the tool."""
         try:
