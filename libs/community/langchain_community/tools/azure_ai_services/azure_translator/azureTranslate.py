@@ -10,7 +10,6 @@ from azure.core.credentials import AzureKeyCredential
 
 logger = logging.getLogger(__name__)
 
-
 class AzureTranslateTool(BaseTool):
     """
     A tool that interacts with the Azure Translator API using the SDK.
@@ -18,7 +17,6 @@ class AzureTranslateTool(BaseTool):
     This tool queries the Azure Translator API to translate text between languages.
     It requires an API key and endpoint, which can be set up as described in the
     Azure Translator API documentation. https://learn.microsoft.com/en-us/azure/ai-services/translator/translator-text-apis?tabs=python
-
     """
 
     translate_key: str = ""
@@ -30,7 +28,6 @@ class AzureTranslateTool(BaseTool):
         "A wrapper around Azure Translator API. "
         "Useful for translating text between languages. Input must be text (str)."
         """must have pip install azure-ai-translation-text"""
-
     )
 
     def __init__(self, *, translate_key: Optional[str] = None, translate_endpoint: Optional[str] = None) -> None:
@@ -89,19 +86,19 @@ class AzureTranslateTool(BaseTool):
             logger.error(f"Translation failed: {str(e)}")
             raise RuntimeError(f"Error during translation: {e}")
 
-    def _run(self, query: str, run_manager: Optional[CallbackManagerForToolRun] = None) -> str:
+    def _run(self, query: str, to_language: str, run_manager: Optional[CallbackManagerForToolRun] = None) -> str:
         """
         Run the tool to perform translation.
 
         Args:
             query (str): The text to be translated.
+            to_language (str): The target language to translate to. No default value.
             run_manager (Optional[CallbackManagerForToolRun], optional): A callback manager for tracking the tool run.
 
         Returns:
             str: The translated text.
         """
         try:
-            to_language = "fr"  # Default to French translation
             return self._translate_text(query, to_language)
         except Exception as e:
             raise RuntimeError(f"Error while running AzureTranslateTool: {e}")
@@ -130,9 +127,9 @@ if __name__ == "__main__":
     # Set up your environment variables or pass the API key and endpoint directly
     tool = AzureTranslateTool.from_env()
 
-    # Test translating the text "Does this work?" to French
+    # Test translating
     try:
-        translated_text = tool._run("Does this work?")
+        translated_text = tool._run("good morning, how are you?", 'es')
         print(f"Translated text: {translated_text}")
     except RuntimeError as e:
         print(f"Error occurred: {e}")
