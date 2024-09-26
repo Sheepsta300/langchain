@@ -129,7 +129,7 @@ if __name__ == "__main__":
 
     # Test translating
     try:
-        translated_text = tool._run("good morning, how are you?", 'es')
+        translated_text = tool._run("good morning, Stephen and Amjed", 'es')
         print(f"Translated text: {translated_text}")
     except RuntimeError as e:
         print(f"Error occurred: {e}")
