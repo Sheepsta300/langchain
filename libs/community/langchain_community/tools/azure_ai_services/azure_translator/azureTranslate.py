@@ -31,8 +31,7 @@ class AzureTranslateTool(BaseTool):
     name: str = "azure_translator_tool"
     description: str = (
         "A wrapper around Azure Translator API. Useful for translating text between "
-        "languages. Input must be text (str)."
-        " Ensure to install the azure-ai-translation-"
+        "languages. Input must be text (str). Ensure to install the azure-ai-translation-"
         "text package."
     )
 
@@ -143,7 +142,7 @@ class AzureTranslateTool(BaseTool):
 if __name__ == "__main__":
     tool = AzureTranslateTool.from_env()
     try:
-        translated_text = tool._run("good morning, How are you?", 'es')
+        translated_text = tool._run("good morning, How are you?", "es")
         logger.info(f"Translated text: {translated_text}")
     except RuntimeError as e:
         logger.error(f"Error occurred: {e}")
