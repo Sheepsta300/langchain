@@ -31,12 +31,13 @@ class AzureTranslateTool(BaseTool):
     name: str = "azure_translator_tool"
     description: str = (
         "A wrapper around Azure Translator API. Useful for translating text between "
-        "languages. Input must be text (str). Ensure to install the azure-ai-translation-"
+        "languages. Input must be text (str)."
+        " Ensure to install the azure-ai-translation-"
         "text package."
     )
 
     def __init__(
-        self, *, translate_key: Optional[str] = None, 
+        self, *, translate_key: Optional[str] = None,
         translate_endpoint: Optional[str] = None
     ) -> None:
         """
@@ -94,7 +95,7 @@ class AzureTranslateTool(BaseTool):
             raise
 
     def _run(
-        self, query: str, to_language: str, 
+        self, query: str, to_language: str,
         run_manager: Optional[CallbackManagerForToolRun] = None
     ) -> str:
         """
@@ -103,7 +104,7 @@ class AzureTranslateTool(BaseTool):
         Args:
             query (str): The text to be translated.
             to_language (str): The target language to translate to.
-            run_manager (Optional[CallbackManagerForToolRun]): A callback manager 
+            run_manager (Optional[CallbackManagerForToolRun]): A callback manager
             for tracking the tool run.
 
         Returns:
@@ -123,9 +124,14 @@ class AzureTranslateTool(BaseTool):
         translate_endpoint = os.getenv("AZURE_OPENAI_TRANSLATE_ENDPOINT")
 
         if not translate_key:
-            raise ValueError("AZURE_TRANSLATE_API_KEY is missing in environment variables")
+            raise ValueError(
+                "AZURE_TRANSLATE_API_KEY is missing in environment variables"
+            )
+
         if not translate_endpoint:
-            raise ValueError("AZURE_TRANSLATE_ENDPOINT is missing in environment variables")
+            raise ValueError(
+                "AZURE_TRANSLATE_ENDPOINT is missing in environment variables"
+            )
 
         logger.info(f"API Key: {translate_key[:4]}**** (masked)")
         logger.info(f"Endpoint: {translate_endpoint}")
