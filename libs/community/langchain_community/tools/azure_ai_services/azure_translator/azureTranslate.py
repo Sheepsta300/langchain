@@ -13,6 +13,7 @@ from langchain_core.tools import BaseTool
 logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger(__name__)
 
+
 class AzureTranslateTool(BaseTool):
     """
     A tool that interacts with the Azure Translator API using the SDK.
@@ -36,8 +37,10 @@ class AzureTranslateTool(BaseTool):
     )
 
     def __init__(
-        self, *, translate_key: Optional[str] = None,
-        translate_endpoint: Optional[str] = None
+        self,
+        *,
+        translate_key: Optional[str] = None,
+        translate_endpoint: Optional[str] = None,
     ) -> None:
         """
         Initialize the AzureTranslateTool with the given API key and endpoint.
@@ -51,13 +54,11 @@ class AzureTranslateTool(BaseTool):
             raise ValueError("Missing API key or endpoint for Azure Translator API.")
 
         super().__init__(
-            translate_key=translate_key,
-            translate_endpoint=translate_endpoint
+            translate_key=translate_key, translate_endpoint=translate_endpoint
         )
 
         self.translate_client = TextTranslationClient(
-            endpoint=translate_endpoint,
-            credential=AzureKeyCredential(translate_key)
+            endpoint=translate_endpoint, credential=AzureKeyCredential(translate_key)
         )
 
     def _translate_text(self, text: str, to_language: str) -> str:
@@ -78,8 +79,7 @@ class AzureTranslateTool(BaseTool):
         body = [{"Text": text}]
         try:
             response = self.translate_client.translate(
-                body=body,
-                to_language=[to_language]
+                body=body, to_language=[to_language]
             )
             if response:
                 logger.warning(
@@ -94,8 +94,10 @@ class AzureTranslateTool(BaseTool):
             raise
 
     def _run(
-        self, query: str, to_language: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None
+        self,
+        query: str,
+        to_language: str,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """
         Run the tool to perform translation.
@@ -142,7 +144,7 @@ class AzureTranslateTool(BaseTool):
 if __name__ == "__main__":
     tool = AzureTranslateTool.from_env()
     try:
-        translated_text = tool._run("good morning, How are you?", 'es')
+        translated_text = tool._run("good morning, How are you?", "es")
         logger.info(f"Translated text: {translated_text}")
     except RuntimeError as e:
         logger.error(f"Error occurred: {e}")
