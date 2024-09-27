@@ -20,7 +20,8 @@ class AzureTranslateTool(BaseTool):
     This tool queries the Azure Translator API to translate text between languages.
     It requires an API key and endpoint, which can be set up as described in the
     Azure Translator API documentation:
-    https://learn.microsoft.com/en-us/azure/ai-services/translator/translator-text-apis?tabs=python
+    https://learn.microsoft.com/en-us/azure/ai-services/translator/
+    translator-text-apis?tabs=python
     """
 
     translate_key: str = ""
@@ -29,17 +30,22 @@ class AzureTranslateTool(BaseTool):
 
     name: str = "azure_translator_tool"
     description: str = (
-        "A wrapper around Azure Translator API. "
-        "Useful for translating text between languages. Input must be text (str). "
-        "Ensure to install the azure-ai-translation-text package."
+        "A wrapper around Azure Translator API. Useful for translating text between "
+        "languages. Input must be text (str). Ensure to install the azure-ai-translation-"
+        "text package."
     )
 
-    def __init__(self, *, translate_key: Optional[str] = None, translate_endpoint: Optional[str] = None) -> None:
+    def __init__(
+        self, *, translate_key: Optional[str] = None, 
+        translate_endpoint: Optional[str] = None
+    ) -> None:
         """
         Initialize the AzureTranslateTool with the given API key and endpoint.
         """
         translate_key = translate_key or os.getenv("AZURE_OPENAI_TRANSLATE_API_KEY")
-        translate_endpoint = translate_endpoint or os.getenv("AZURE_OPENAI_TRANSLATE_ENDPOINT")
+        translate_endpoint = translate_endpoint or os.getenv(
+            "AZURE_OPENAI_TRANSLATE_ENDPOINT"
+        )
 
         if not translate_key or not translate_endpoint:
             raise ValueError("Missing API key or endpoint for Azure Translator API.")
@@ -77,7 +83,8 @@ class AzureTranslateTool(BaseTool):
             )
             if response:
                 logger.warning(
-                    f"Translation successful: {response[0].translations[0].text}")  # Use WARNING level for successful operations
+                    f"Translation successful: {response[0].translations[0].text}"
+                )  # Use WARNING level for successful operations
                 return response[0].translations[0].text
             else:
                 logger.error("Translation failed with an empty response")
@@ -86,14 +93,18 @@ class AzureTranslateTool(BaseTool):
             logger.error(f"Translation failed: {e}")
             raise
 
-    def _run(self, query: str, to_language: str, run_manager: Optional[CallbackManagerForToolRun] = None) -> str:
+    def _run(
+        self, query: str, to_language: str, 
+        run_manager: Optional[CallbackManagerForToolRun] = None
+    ) -> str:
         """
         Run the tool to perform translation.
 
         Args:
             query (str): The text to be translated.
             to_language (str): The target language to translate to.
-            run_manager (Optional[CallbackManagerForToolRun]): A callback manager for tracking the tool run.
+            run_manager (Optional[CallbackManagerForToolRun]): A callback manager 
+            for tracking the tool run.
 
         Returns:
             str: The translated text.
