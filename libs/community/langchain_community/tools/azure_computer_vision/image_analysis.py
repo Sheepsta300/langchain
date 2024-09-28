@@ -79,7 +79,6 @@ class AzureCogsComputerVisionTool(BaseTool):
     #     computer_vision_key = get_from_dict_or_env(
     #         values, "computer_vision_key", "COMPUTER_VISION_KEY"
     #     )
-
     #     computer_vision_endpoint = get_from_dict_or_env(
     #         values, "computer_vision_endpoint", "COMPUTER_VISION_ENDPOINT"
     #     )
