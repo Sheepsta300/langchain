@@ -42,7 +42,7 @@ class AzureCogsComputerVisionTool(BaseTool):
     ):
         computer_vision_key = computer_vision_key or os.environ["COMPUTER_VISION_KEY"]
         computer_vision_endpoint = (
-            computer_vision_endpoint or os.environ["computer_vision_endpoint"]
+            computer_vision_endpoint or os.environ["COMPUTER_VISION_ENDPOINT"]
         )
         try:
             from azure.cognitiveservices.vision.computervision import (
