@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 from langchain_core.callbacks import CallbackManagerForToolRun
 from langchain_core.tools import BaseTool
@@ -28,16 +28,6 @@ class AzureContentSafetyTextTool(BaseTool):
         content_safety_client (Any):
             An instance of the Azure Content Safety Client used for making API
             requests.
-
-    Methods:
-        _sentiment_analysis(text: str) -> Dict:
-            Analyzes the provided text to assess its sentiment and safety,
-            returning the analysis results.
-
-        _run(query: str,
-            run_manager: Optional[CallbackManagerForToolRun] = None) -> str:
-            Uses the tool to analyze the given query and returns the result.
-            Raises a RuntimeError if an exception occurs.
     """
 
     content_safety_key: str = ""  #: :meta private:
@@ -102,9 +92,9 @@ class AzureContentSafetyTextTool(BaseTool):
             content_safety_client=content_safety_client,
         )
 
-    def _sentiment_analysis(self, text: str) -> Dict:
+    def _detect_harmful_content(self, text: str) -> list:
         """
-        Perform sentiment analysis on the provided text.
+        Detect harful content in the provided text.
 
         This method uses the Azure Content Safety Client to analyze the text and
         determine its sentiment and safety categories.
@@ -122,11 +112,17 @@ class AzureContentSafetyTextTool(BaseTool):
         result = response.categories_analysis
         return result
 
+    def _format_response(self, result: list) -> str:
+        formatted_result = ""
+        for c in result:
+            formatted_result += f"{c.category}: {c.severity}\n"
+        return formatted_result
+
     def _run(
         self,
         query: str,
         run_manager: Optional[CallbackManagerForToolRun] = None,
-    ) -> Dict:
+    ) -> str:
         """
         Analyze the given query using the tool.
 
@@ -146,6 +142,7 @@ class AzureContentSafetyTextTool(BaseTool):
             RuntimeError: If an error occurs while running the tool.
         """
         try:
-            return self._sentiment_analysis(query)
+            result = self._detect_harmful_content(query)
+            return self._format_response(result)
         except Exception as e:
             raise RuntimeError(f"Error while running AzureContentSafetyTextTool: {e}")
