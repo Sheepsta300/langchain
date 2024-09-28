@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import os
-from typing import Iterable, Optional
+from typing import Iterable, Optional, Generator
 
 from langchain_community.document_loaders.blob_loaders import FileSystemBlobLoader
 from langchain_community.document_loaders.blob_loaders.schema import Blob, BlobLoader
@@ -16,7 +16,7 @@ class AzureComputerVisionThumbnail(BlobLoader):
         *,
         computer_vision_key: Optional[str] = None,
         computer_vision_endpoint: Optional[str] = None,
-        thumbnail_name: Optional[str] = "thumbnail",
+        thumbnail_name: str = "thumbnail",
         image: str,
         width: int,
         height: int,
@@ -65,7 +65,7 @@ class AzureComputerVisionThumbnail(BlobLoader):
         for blob in loader.yield_blobs():
             yield blob
 
-    def _generate_thumbnail(self):
+    def _generate_thumbnail(self) -> Generator:
         image_src_type = detect_file_src_type(self.image)
         if image_src_type == "local":
             image_data = open(self.image, "rb")

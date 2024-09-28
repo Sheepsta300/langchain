@@ -24,7 +24,7 @@ class AzureCogsComputerVisionTool(BaseTool):
     computer_vision_key: Optional[str] = None  #: :meta private:
     computer_vision_endpoint: Optional[str] = None  #: :meta private:
     computer_vision_client: Any  #: :meta private:
-    visual_features: Optional[list[str]] = ["tags"]  #: :meta private:
+    visual_features: list[str] = ["tags"]  #: :meta private:
 
     name: str = "azure_cogs_computer_vision_tool"
     description: str = (
@@ -38,7 +38,7 @@ class AzureCogsComputerVisionTool(BaseTool):
         *,
         computer_vision_key: Optional[str] = None,
         computer_vision_endpoint: Optional[str] = None,
-        visual_features: Optional[list[str]] = ["tags"],
+        visual_features: list[str] = ["tags"],
     ):
         computer_vision_key = computer_vision_key or os.environ["COMPUTER_VISION_KEY"]
         computer_vision_endpoint = (
