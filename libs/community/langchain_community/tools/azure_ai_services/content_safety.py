@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 import logging
-import os
-from typing import Any, Optional
+from typing import Any, Dict, Optional
 
 from langchain_core.callbacks import CallbackManagerForToolRun
 from langchain_core.tools import BaseTool
+from langchain_core.utils import get_from_dict_or_env
+from pydantic import model_validator
 
 logger = logging.getLogger(__name__)
 
@@ -42,41 +43,20 @@ class AzureContentSafetyTextTool(BaseTool):
         "Input must be text (str)."
     )
 
-    def __init__(
-        self,
-        *,
-        content_safety_key: Optional[str] = None,
-        content_safety_endpoint: Optional[str] = None,
-    ) -> None:
-        """
-        Initialize the AzureContentSafetyTextTool with the given API key and endpoint.
-
-        If not provided, the API key and endpoint are fetched from environment
-        variables.
-
-        Args:
-            content_safety_key (Optional[str]):
-                The API key for Azure Content Safety API. If not provided, it will
-                be fetched from the environment variable 'CONTENT_SAFETY_API_KEY'.
-            content_safety_endpoint (Optional[str]):
-                The endpoint URL for Azure Content Safety API. If not provided, it
-                will be fetched from the environment variable
-                'CONTENT_SAFETY_ENDPOINT'.
-
-        Raises:
-            ImportError: If the 'azure-ai-contentsafety' package is not installed.
-            ValueError: If API key or endpoint is not provided and environment
-                variables are missing.
-        """
-        content_safety_key = content_safety_key or os.environ["CONTENT_SAFETY_API_KEY"]
-        content_safety_endpoint = (
-            content_safety_endpoint or os.environ["CONTENT_SAFETY_ENDPOINT"]
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: Dict) -> Any:
+        content_safety_key = get_from_dict_or_env(
+            values, "content_safety_key", "CONTENT_SAFETY_API_KEY"
+        )
+        content_safety_endpoint = get_from_dict_or_env(
+            values, "content_safety_endpoint", "CONTENT_SAFETY_ENDPOINT"
         )
         try:
             import azure.ai.contentsafety as sdk
             from azure.core.credentials import AzureKeyCredential
 
-            content_safety_client = sdk.ContentSafetyClient(
+            values["content_safety_client"] = sdk.ContentSafetyClient(
                 endpoint=content_safety_endpoint,
                 credential=AzureKeyCredential(content_safety_key),
             )
@@ -86,11 +66,8 @@ class AzureContentSafetyTextTool(BaseTool):
                 "azure-ai-contentsafety is not installed. "
                 "Run `pip install azure-ai-contentsafety` to install."
             )
-        super().__init__(
-            content_safety_key=content_safety_key,
-            content_safety_endpoint=content_safety_endpoint,
-            content_safety_client=content_safety_client,
-        )
+
+        return values
 
     def _detect_harmful_content(self, text: str) -> list:
         """
