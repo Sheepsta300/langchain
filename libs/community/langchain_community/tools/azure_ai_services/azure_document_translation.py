@@ -2,10 +2,8 @@ from __future__ import annotations
 
 import os
 import logging
-from typing import Optional
+from typing import Optional, Any
 
-from azure.ai.translation.text import TextTranslationClient
-from azure.ai.translation.text.models import InputTextItem
 from langchain_core.tools import BaseTool
 from langchain_core.callbacks import CallbackManagerForToolRun
 
@@ -21,14 +19,14 @@ class AzureDocumentTranslateTool(BaseTool):
     text_translation_key: str = ""
     text_translation_endpoint: str = ""
     target_language: str = "es"  # Default target language set to Spanish
-    client: Optional[TextTranslationClient] = None
+    client: Any
 
     name: str = "azure_document_translation"
     description: str = (
         """
-        This tool can be used if you want to 
+        A Wrapper around Azure AI Services can be used to
         translate a document into a specific language.
-        It reads the text from a file, processes it, 
+        It reads the text from a file, processes it,
         and then outputs with the desired language.
         """
     )
@@ -42,7 +40,6 @@ class AzureDocumentTranslateTool(BaseTool):
         try:
             from azure.ai.translation.text import TextTranslationClient
             from azure.core.credentials import AzureKeyCredential
-            from azure.ai.translation.text.models import InputTextItem
         except ImportError:
             raise ImportError(
                 "The Azure Text Translation SDK is not installed. "
@@ -70,7 +67,7 @@ class AzureDocumentTranslateTool(BaseTool):
     def read_text_from_file(self, file_path: str) -> str:
         """
         Read and return text from the specified file,
-        supporting PDF, TXT, and DOCX formats.
+        supporting PDF, DOCX, PPTX, XLSX, HTML, and XML formats.
 
         Args:
             file_path (str): Path to the input file.
@@ -81,51 +78,56 @@ class AzureDocumentTranslateTool(BaseTool):
         Raises:
             ValueError: If the file type is unsupported.
         """
-        file_extension = os.path.splitext(file_path)[1].lower()
 
-        if file_extension == ".pdf":
-            return self.read_pdf(file_path)
-        elif file_extension == ".txt":
-            return self.read_text(file_path)
-        elif file_extension == ".docx":
-            return self.read_docx(file_path)
-        else:
-            raise ValueError(f"Unsupported file type: {file_extension}")
-
-    def read_pdf(self, file_path: str) -> str:
-        """Extract text from a PDF file."""
         try:
-            import pypdf
+            from langchain_community.document_loaders import (
+                UnstructuredPowerPointLoader,
+                UnstructuredWordDocumentLoader,
+                UnstructuredPDFLoader,
+                UnstructuredExcelLoader,
+                UnstructuredXMLLoader,
+                UnstructuredHTMLLoader)
         except ImportError:
             raise ImportError(
-                "The 'pypdf' library is not installed or is deprecated. "
-                "Run `pip install pypdf` to install."
+                """
+                The Langchain Unstructured Document loader is not installed. 
+                First run `pip install langchain-unstructured` to install.
+                
+                To install the dependencies for all document types, 
+                use 'pip install "unstructured[all-docs]"'
+                """
             )
 
-        text = ""
-        with open(file_path, "rb") as file:
-            reader = pypdf.PdfReader(file)
-            for page in reader.pages:
-                text += page.extract_text() + " "
-        return text.strip()
+        file_extension = os.path.splitext(file_path)[1].lower()
+
+        # Map file extensions to loader classes
+        loader_map = {
+            ".pdf": UnstructuredPDFLoader,
+            ".docx": UnstructuredWordDocumentLoader,
+            ".pptx": UnstructuredPowerPointLoader,
+            ".xlsx": UnstructuredExcelLoader,
+            ".xml": UnstructuredXMLLoader,
+            ".html": UnstructuredHTMLLoader
+        }
+
+        loader_class = loader_map.get(file_extension)
+
+        if file_extension == ".txt":
+            # Handle plain text files directly
+            return self.read_text(file_path)
+        elif loader_class is None:
+            raise ValueError(f"Unsupported file type: {file_extension}")
+
+        # Load the document using the appropriate loader
+        loader = loader_class(file_path)
+        data = loader.load()
+
+        return " ".join([doc.page_content for doc in data])
 
     def read_text(self, file_path: str) -> str:
         """Read text from a plain text file."""
         with open(file_path, "r", encoding="utf-8") as file:
             return file.read().strip()
-
-    def read_docx(self, file_path: str) -> str:
-        """Extract text from a DOCX file."""
-        try:
-            import docx
-        except ImportError:
-            raise ImportError(
-                "The 'python-docx' library is not installed. "
-                "Run `pip install python-docx` to install."
-            )
-
-        doc = docx.Document(file_path)
-        return " ".join([para.text for para in doc.paragraphs]).strip()
 
     def translate_text(self, text: str, target_language: Optional[str] = None) -> str:
         """
@@ -144,7 +146,13 @@ class AzureDocumentTranslateTool(BaseTool):
             RuntimeError: If the translation request fails.
         """
         if target_language is None:
-            target_language = self.target_language  # Use the default class target language
+            target_language = self.target_language
+
+        try:
+            from azure.ai.translation.text.models import InputTextItem
+        except ImportError:
+            raise ImportError(
+                "Run 'pip install azure-ai-translation-text'.")
 
         try:
             request_body = [InputTextItem(text=text)]
@@ -165,4 +173,6 @@ class AzureDocumentTranslateTool(BaseTool):
             return self.translate_text(query)
         except Exception as e:
             logger.error(f"Error while running AzureDocumentTranslateTool: {e}")
-            raise RuntimeError(f"Error while running AzureDocumentTranslateTool: {e}")
+            raise RuntimeError(
+                f"Error while running AzureDocumentTranslateTool: {e}")
+
