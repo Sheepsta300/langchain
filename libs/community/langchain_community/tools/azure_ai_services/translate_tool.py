@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import Any, Optional, Dict
+from typing import Any, Dict, Optional
 
 from langchain_core.callbacks import CallbackManagerForToolRun
 from langchain_core.tools import BaseTool
@@ -79,7 +79,9 @@ class AzureTranslateTool(BaseTool):
         if not text:
             raise ValueError("Input text for translation is empty.")
 
-        # Ensure that the translation client is initialized by validating the environment
+        # Ensure that the translation client is initialized
+        # by validating the environment
+
         if not self.translate_client:
             values = self.validate_environment({})
             self.translate_client = values["translate_client"]
