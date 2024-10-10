@@ -65,7 +65,7 @@ class AzureTranslateTool(BaseTool):
 
         return values
 
-    def _translate_text(self, text: str, to_language: str = 'en') -> str:
+    def _translate_text(self, text: str, to_language: str = "en") -> str:
         """
         Perform text translation using the Azure Translator API.
 
@@ -81,7 +81,6 @@ class AzureTranslateTool(BaseTool):
 
         # Ensure that the translation client is initialized
         # by validating the environment
-
         if not self.translate_client:
             values = self.validate_environment({})
             self.translate_client = values["translate_client"]
