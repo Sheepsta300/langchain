@@ -1,20 +1,20 @@
 from __future__ import annotations
 
-import os
 import logging
-from typing import Optional, Any, Dict
+import os
+from typing import Any, Dict, Optional
 
-from langchain_core.tools import BaseTool
 from langchain_core.callbacks import CallbackManagerForToolRun
+from langchain_core.tools import BaseTool
 from langchain_core.utils import get_from_dict_or_env
 
 from langchain_community.document_loaders import (
+    UnstructuredExcelLoader,
+    UnstructuredHTMLLoader,
+    UnstructuredPDFLoader,
     UnstructuredPowerPointLoader,
     UnstructuredWordDocumentLoader,
-    UnstructuredPDFLoader,
-    UnstructuredExcelLoader,
     UnstructuredXMLLoader,
-    UnstructuredHTMLLoader
 )
 
 logger = logging.getLogger(__name__)
@@ -32,14 +32,12 @@ class AzureFileTranslateTool(BaseTool):
     translate_client: Any
 
     name: str = "azure_document_translation"
-    description: str = (
-        """
+    description: str = """
         A Wrapper around Azure AI Services can be used to
         translate a document into a specific language.
         It reads the text from a file, processes it,
         and then outputs with the desired language.
         """
-    )
 
     @classmethod
     def validate_environment(cls, values: Dict) -> Any:
@@ -95,7 +93,7 @@ class AzureFileTranslateTool(BaseTool):
             ".pptx": UnstructuredPowerPointLoader,
             ".xlsx": UnstructuredExcelLoader,
             ".xml": UnstructuredXMLLoader,
-            ".html": UnstructuredHTMLLoader
+            ".html": UnstructuredHTMLLoader,
         }
 
         loader_class = loader_map.get(file_extension)
@@ -144,7 +142,8 @@ class AzureFileTranslateTool(BaseTool):
         try:
             request_body = [InputTextItem(text=text)]
             response = self.translate_client.translate(
-                content=request_body, to=[target_language])
+                content=request_body, to=[target_language]
+            )
 
             translations = response[0].translations
             if translations:
@@ -153,11 +152,11 @@ class AzureFileTranslateTool(BaseTool):
         except Exception as e:
             raise RuntimeError(f"An error occurred during translation: {e}")
 
-    def _run(self, query: str,
-             run_manager: Optional[CallbackManagerForToolRun] = None) -> str:
-        """"Run the tool"""
+    def _run(
+        self, query: str, run_manager: Optional[CallbackManagerForToolRun] = None
+    ) -> str:
+        """ "Run the tool"""
         try:
             return self._translate_text(query)
         except Exception as e:
             raise RuntimeError(f"Error while running AzureFileTranslateTool: {e}")
-
