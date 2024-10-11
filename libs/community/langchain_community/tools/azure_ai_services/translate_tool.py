@@ -9,6 +9,7 @@ from langchain_core.tools import BaseTool
 
 logger = logging.getLogger(__name__)
 
+
 class AzureTranslateTool(BaseTool):
     """
     A tool that interacts with the Azure Translator API using the SDK.
