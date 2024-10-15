@@ -1,20 +1,21 @@
 from __future__ import annotations
 
-import logging
 import os
-from typing import Any, Dict, Optional
+import logging
+from typing import Optional, Any, Dict
 
-from langchain_core.callbacks import CallbackManagerForToolRun
 from langchain_core.tools import BaseTool
+from langchain_core.callbacks import CallbackManagerForToolRun
 from langchain_core.utils import get_from_dict_or_env
+from pydantic import model_validator
 
 from langchain_community.document_loaders import (
-    UnstructuredExcelLoader,
-    UnstructuredHTMLLoader,
-    UnstructuredPDFLoader,
     UnstructuredPowerPointLoader,
     UnstructuredWordDocumentLoader,
+    UnstructuredPDFLoader,
+    UnstructuredExcelLoader,
     UnstructuredXMLLoader,
+    UnstructuredHTMLLoader
 )
 
 logger = logging.getLogger(__name__)
@@ -29,16 +30,21 @@ class AzureFileTranslateTool(BaseTool):
     text_translation_key: str = ""
     text_translation_endpoint: str = ""
     target_language: str = "en"
+    region: str = ""
+    file_path: str = ""
     translate_client: Any
 
-    name: str = "azure_document_translation"
-    description: str = """
-        A Wrapper around Azure AI Services can be used to
+    name: str = "azure_file_translation"
+    description: str = (
+        """
+        A Wrapper around Azure AI Services that can be used to
         translate a document into a specific language.
         It reads the text from a file, processes it,
         and then outputs with the desired language.
         """
+    )
 
+    @model_validator(mode="before")
     @classmethod
     def validate_environment(cls, values: Dict) -> Any:
         """
@@ -51,6 +57,11 @@ class AzureFileTranslateTool(BaseTool):
             values, "text_translation_endpoint", "AZURE_TRANSLATE_ENDPOINT"
         )
 
+        region = get_from_dict_or_env(
+            values, "region", "AZURE_REGION"
+        )
+
+
         try:
             from azure.ai.translation.text import TextTranslationClient
             from azure.core.credentials import AzureKeyCredential
@@ -59,6 +70,7 @@ class AzureFileTranslateTool(BaseTool):
             values["translate_client"] = TextTranslationClient(
                 endpoint=azure_translate_endpoint,
                 credential=AzureKeyCredential(azure_translate_key),
+                region=region
             )
 
         except ImportError:
@@ -93,13 +105,12 @@ class AzureFileTranslateTool(BaseTool):
             ".pptx": UnstructuredPowerPointLoader,
             ".xlsx": UnstructuredExcelLoader,
             ".xml": UnstructuredXMLLoader,
-            ".html": UnstructuredHTMLLoader,
+            ".html": UnstructuredHTMLLoader
         }
 
         loader_class = loader_map.get(file_extension)
 
         if file_extension == ".txt":
-            # Handle plain text files directly
             return self._read_text(file_path)
         elif loader_class is None:
             raise ValueError(f"Unsupported file type: {file_extension}")
@@ -131,32 +142,35 @@ class AzureFileTranslateTool(BaseTool):
         Raises:
             RuntimeError: If the translation request fails.
         """
+        if not self.translate_client:
+            values = self.validate_environment({})
+            self.translate_client = values["translate_client"]
+
         if target_language is None:
             target_language = self.target_language
-
         try:
             from azure.ai.translation.text.models import InputTextItem
         except ImportError:
-            raise ImportError("Run 'pip install azure-ai-translation-text'.")
+            raise ImportError(
+                "Run 'pip install azure-ai-translation-text'.")
 
         try:
             request_body = [InputTextItem(text=text)]
             response = self.translate_client.translate(
-                content=request_body, to=[target_language]
-            )
+                body=request_body, to_language=[target_language])
 
             translations = response[0].translations
             if translations:
                 return translations[0].text
-            return ""  # No translations found
+            return ""
         except Exception as e:
             raise RuntimeError(f"An error occurred during translation: {e}")
 
-    def _run(
-        self, query: str, run_manager: Optional[CallbackManagerForToolRun] = None
-    ) -> str:
-        """ "Run the tool"""
+    def _run(self, query: str,
+             run_manager: Optional[CallbackManagerForToolRun] = None) -> str:
+        """"Run the tool"""
         try:
-            return self._translate_text(query)
+            text = self._read_text_from_file(self.file_path or query)
+            return self._translate_text(text)
         except Exception as e:
             raise RuntimeError(f"Error while running AzureFileTranslateTool: {e}")
