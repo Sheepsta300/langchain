@@ -1,21 +1,21 @@
 from __future__ import annotations
 
-import os
 import logging
-from typing import Optional, Any, Dict
+import os
+from typing import Any, Dict, Optional
 
-from langchain_core.tools import BaseTool
 from langchain_core.callbacks import CallbackManagerForToolRun
+from langchain_core.tools import BaseTool
 from langchain_core.utils import get_from_dict_or_env
 from pydantic import model_validator
 
 from langchain_community.document_loaders import (
+    UnstructuredExcelLoader,
+    UnstructuredHTMLLoader,
+    UnstructuredPDFLoader,
     UnstructuredPowerPointLoader,
     UnstructuredWordDocumentLoader,
-    UnstructuredPDFLoader,
-    UnstructuredExcelLoader,
     UnstructuredXMLLoader,
-    UnstructuredHTMLLoader
 )
 
 logger = logging.getLogger(__name__)
@@ -35,14 +35,12 @@ class AzureFileTranslateTool(BaseTool):
     translate_client: Any
 
     name: str = "azure_file_translation"
-    description: str = (
-        """
+    description: str = """
         A Wrapper around Azure AI Services that can be used to
         translate a document into a specific language.
         It reads the text from a file, processes it,
         and then outputs with the desired language.
         """
-    )
 
     @model_validator(mode="before")
     @classmethod
@@ -57,10 +55,7 @@ class AzureFileTranslateTool(BaseTool):
             values, "text_translation_endpoint", "AZURE_TRANSLATE_ENDPOINT"
         )
 
-        region = get_from_dict_or_env(
-            values, "region", "AZURE_REGION"
-        )
-
+        region = get_from_dict_or_env(values, "region", "AZURE_REGION")
 
         try:
             from azure.ai.translation.text import TextTranslationClient
@@ -70,7 +65,7 @@ class AzureFileTranslateTool(BaseTool):
             values["translate_client"] = TextTranslationClient(
                 endpoint=azure_translate_endpoint,
                 credential=AzureKeyCredential(azure_translate_key),
-                region=region
+                region=region,
             )
 
         except ImportError:
@@ -105,7 +100,7 @@ class AzureFileTranslateTool(BaseTool):
             ".pptx": UnstructuredPowerPointLoader,
             ".xlsx": UnstructuredExcelLoader,
             ".xml": UnstructuredXMLLoader,
-            ".html": UnstructuredHTMLLoader
+            ".html": UnstructuredHTMLLoader,
         }
 
         loader_class = loader_map.get(file_extension)
@@ -151,13 +146,13 @@ class AzureFileTranslateTool(BaseTool):
         try:
             from azure.ai.translation.text.models import InputTextItem
         except ImportError:
-            raise ImportError(
-                "Run 'pip install azure-ai-translation-text'.")
+            raise ImportError("Run 'pip install azure-ai-translation-text'.")
 
         try:
             request_body = [InputTextItem(text=text)]
             response = self.translate_client.translate(
-                body=request_body, to_language=[target_language])
+                body=request_body, to_language=[target_language]
+            )
 
             translations = response[0].translations
             if translations:
@@ -166,9 +161,10 @@ class AzureFileTranslateTool(BaseTool):
         except Exception as e:
             raise RuntimeError(f"An error occurred during translation: {e}")
 
-    def _run(self, query: str,
-             run_manager: Optional[CallbackManagerForToolRun] = None) -> str:
-        """"Run the tool"""
+    def _run(
+        self, query: str, run_manager: Optional[CallbackManagerForToolRun] = None
+    ) -> str:
+        """ "Run the tool"""
         try:
             text = self._read_text_from_file(self.file_path or query)
             return self._translate_text(text)
