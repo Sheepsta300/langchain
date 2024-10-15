@@ -1,18 +1,16 @@
 from __future__ import annotations
 
 import logging
+import os
 from typing import Any, Optional
 
-from azure.ai.translation.text import TextTranslationClient
-from azure.core.credentials import AzureKeyCredential
-from libs.core.langchain_core.callbacks.manager import CallbackManagerForToolRun
-from libs.core.langchain_core.utils.env import get_from_dict_or_env
-from pydantic import BaseModel, field_validator
+from langchain_core.callbacks import CallbackManagerForToolRun
+from langchain_core.tools import BaseTool
 
 logger = logging.getLogger(__name__)
 
 
-class AzureTranslateTool(BaseModel):
+class AzureTranslateTool(BaseTool):
     """
     A tool that interacts with the Azure Translator API using the SDK.
 
@@ -23,12 +21,14 @@ class AzureTranslateTool(BaseModel):
     translator-text-apis?tabs=python
     """
 
-    text_translation_key: str
-    text_translation_endpoint: str
-    region: str
-    translate_client: Optional[Any] = None  # Make Optional
-
+    translate_client: Any = None
     default_language: str = "en"
+
+    # New class attributes
+    text_translation_key: str = ""
+    text_translation_endpoint: str = ""
+    region: str = ""
+
     name: str = "azure_translator_tool"
     description: str = (
         "A wrapper around Azure Translator API. Useful for translating text between "
@@ -36,30 +36,46 @@ class AzureTranslateTool(BaseModel):
         "azure-ai-translation-text package."
     )
 
-    @field_validator(
-        "text_translation_key", "text_translation_endpoint", "region", mode="before"
-    )
-    def validate_environment(cls, v, field):
-        """
-        Validate that the required environment variables are set.
-        """
-        value = get_from_dict_or_env({}, field.name, f"AZURE_{field.name.upper()}")
-        if not value:
-            raise ValueError(f"{field.name} is missing in environment variables")
-        return value
+    def __init__(self, **data: Any):
+        super().__init__(**data)
+        self.validate_environment()
 
-    def setup_client(self):
-        """Sets up the translation client."""
-        if not self.translate_client:
-            try:
-                self.translate_client = TextTranslationClient(
-                    endpoint=self.text_translation_endpoint,
-                    credential=AzureKeyCredential(self.text_translation_key),
-                    region=self.region,
-                )
-            except Exception as e:
-                logger.error("Failed to set up the translation client: %s", e)
-                raise
+    def validate_environment(self):
+        """
+        Validate that the required environment variables are set, and set up
+        the client.
+        """
+        try:
+            from azure.ai.translation.text import TextTranslationClient
+            from azure.core.credentials import AzureKeyCredential
+        except ImportError:
+            raise ImportError(
+                "azure-ai-translation-text is not installed. "
+                "Run `pip install azure-ai-translation-text` to install."
+            )
+
+        # Get environment variables
+        self.text_translation_key = os.getenv("AZURE_TRANSLATE_API_KEY")
+        self.text_translation_endpoint = os.getenv("AZURE_TRANSLATE_ENDPOINT")
+        self.region = os.getenv("REGION")
+
+        if not self.text_translation_key:
+            raise ValueError(
+                "AZURE_TRANSLATE_API_KEY is missing in environment variables"
+            )
+        if not self.text_translation_endpoint:
+            raise ValueError(
+                "AZURE_TRANSLATE_ENDPOINT is missing in environment variables"
+            )
+        if not self.region:
+            raise ValueError("REGION is missing in environment variables")
+
+        # Set up the translation client
+        self.translate_client = TextTranslationClient(
+            endpoint=self.text_translation_endpoint,
+            credential=AzureKeyCredential(self.text_translation_key),
+            region=self.region,
+        )
 
     def _translate_text(self, text: str, to_language: str = "en") -> str:
         """
@@ -76,7 +92,8 @@ class AzureTranslateTool(BaseModel):
             raise ValueError("Input text for translation is empty.")
 
         # Ensure that the translation client is initialized
-        self.setup_client()
+        if not self.translate_client:
+            self.validate_environment()
 
         body = [{"Text": text}]
         try:
