@@ -4,6 +4,8 @@ import logging
 import os
 from typing import Any, Optional
 
+from azure.ai.translation.text import TextTranslationClient
+from azure.core.credentials import AzureKeyCredential
 from langchain_core.callbacks import CallbackManagerForToolRun
 from pydantic import BaseModel
 
@@ -21,13 +23,13 @@ class AzureTranslateTool(BaseModel):
     translator-text-apis?tabs=python
     """
 
-    translate_client: Any = None
-    default_language: str = "en"
-
-    # New class attributes
+    # New class attributes as per feedback
     text_translation_key: str = ""
     text_translation_endpoint: str = ""
     region: str = ""
+
+    translate_client: Any = None
+    default_language: str = "en"
 
     name: str = "azure_translator_tool"
     description: str = (
@@ -36,28 +38,15 @@ class AzureTranslateTool(BaseModel):
         "azure-ai-translation-text package."
     )
 
-    def __init__(self, **data: Any):
-        super().__init__(**data)
-        self.validate_environment()
-
     def validate_environment(self) -> None:
         """
         Validate that the required environment variables are set, and set up
         the client.
         """
-        try:
-            from azure.ai.translation.text import TextTranslationClient
-            from azure.core.credentials import AzureKeyCredential
-        except ImportError:
-            raise ImportError(
-                "azure-ai-translation-text is not installed. "
-                "Run `pip install azure-ai-translation-text` to install."
-            )
-
         # Get environment variables
-        self.text_translation_key = os.getenv("AZURE_TRANSLATE_API_KEY")
-        self.text_translation_endpoint = os.getenv("AZURE_TRANSLATE_ENDPOINT")
-        self.region = os.getenv("REGION")
+        self.text_translation_key = os.getenv("AZURE_TRANSLATE_API_KEY", "")
+        self.text_translation_endpoint = os.getenv("AZURE_TRANSLATE_ENDPOINT", "")
+        self.region = os.getenv("AZURE_REGION", "")
 
         if not self.text_translation_key:
             raise ValueError(
@@ -68,9 +57,9 @@ class AzureTranslateTool(BaseModel):
                 "AZURE_TRANSLATE_ENDPOINT is missing in environment variables"
             )
         if not self.region:
-            raise ValueError("REGION is missing in environment variables")
+            raise ValueError("AZURE_REGION is missing in environment variables")
 
-        # Set up the translation client
+        # Initialize the translation client
         self.translate_client = TextTranslationClient(
             endpoint=self.text_translation_endpoint,
             credential=AzureKeyCredential(self.text_translation_key),
@@ -91,7 +80,7 @@ class AzureTranslateTool(BaseModel):
         if not text:
             raise ValueError("Input text for translation is empty.")
 
-        # Ensure that the translation client is initialized
+        # Ensure the translation client is initialized
         if not self.translate_client:
             self.validate_environment()
 
@@ -116,8 +105,8 @@ class AzureTranslateTool(BaseModel):
 
         Args:
             query (str): The text to be translated.
-            run_manager (Optional[CallbackManagerForToolRun]):
-             A callback manager for tracking the tool run.
+            run_manager (Optional[CallbackManagerForToolRun]): A
+            callback manager for tracking the tool run.
             to_language (str): The target language for translation.
 
         Returns:
