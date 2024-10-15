@@ -6,7 +6,7 @@ from typing import Any, Optional
 
 from langchain_core.callbacks import CallbackManagerForToolRun
 from langchain_core.tools import BaseTool
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, model_validator
 from azure.ai.translation.text import TextTranslationClient
 from azure.core.credentials import AzureKeyCredential
 
@@ -38,18 +38,23 @@ class AzureTranslateTool(BaseModel):
         "azure-ai-translation-text package."
     )
 
-    @field_validator("text_translation_key", "text_translation_endpoint", "region", mode="before")
-    def validate_environment(cls, v, field):
+    @model_validator(mode="before")
+    def validate_environment(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """
         Validate that the required environment variables are set.
         """
-        if field.name == "text_translation_key":
-            return os.getenv("AZURE_TRANSLATE_API_KEY")
-        elif field.name == "text_translation_endpoint":
-            return os.getenv("AZURE_TRANSLATE_ENDPOINT")
-        elif field.name == "region":
-            return os.getenv("AZURE_REGION")
-        return v
+        values["text_translation_key"] = os.getenv("AZURE_TRANSLATE_API_KEY")
+        values["text_translation_endpoint"] = os.getenv("AZURE_TRANSLATE_ENDPOINT")
+        values["region"] = os.getenv("AZURE_REGION")
+
+        if not values["text_translation_key"]:
+            raise ValueError("AZURE_TRANSLATE_API_KEY is missing in environment variables")
+        if not values["text_translation_endpoint"]:
+            raise ValueError("AZURE_TRANSLATE_ENDPOINT is missing in environment variables")
+        if not values["region"]:
+            raise ValueError("AZURE_REGION is missing in environment variables")
+
+        return values
 
     def setup_client(self):
         """Sets up the translation client if it's not already set."""
