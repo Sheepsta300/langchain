@@ -2,15 +2,15 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import Any, Optional
+from typing import Any, Dict, Optional
 
-from langchain_core.callbacks import CallbackManagerForToolRun
-from langchain_core.tools import BaseTool
-from pydantic import BaseModel, model_validator
 from azure.ai.translation.text import TextTranslationClient
 from azure.core.credentials import AzureKeyCredential
+from langchain_core.callbacks import CallbackManagerForToolRun
+from pydantic import BaseModel, model_validator
 
 logger = logging.getLogger(__name__)
+
 
 class AzureTranslateTool(BaseModel):
     """
@@ -48,9 +48,13 @@ class AzureTranslateTool(BaseModel):
         values["region"] = os.getenv("AZURE_REGION")
 
         if not values["text_translation_key"]:
-            raise ValueError("AZURE_TRANSLATE_API_KEY is missing in environment variables")
+            raise ValueError(
+                "AZURE_TRANSLATE_API_KEY is missing in environment variables"
+            )
         if not values["text_translation_endpoint"]:
-            raise ValueError("AZURE_TRANSLATE_ENDPOINT is missing in environment variables")
+            raise ValueError(
+                "AZURE_TRANSLATE_ENDPOINT is missing in environment variables"
+            )
         if not values["region"]:
             raise ValueError("AZURE_REGION is missing in environment variables")
 
@@ -103,7 +107,8 @@ class AzureTranslateTool(BaseModel):
 
         Args:
             query (str): The text to be translated.
-            run_manager (Optional[CallbackManagerForToolRun]): A callback manager for tracking the tool run.
+            run_manager (Optional[CallbackManagerForToolRun]):
+            A callback manager for tracking the tool run.
             to_language (str): The target language for translation.
 
         Returns:
