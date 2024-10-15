@@ -6,11 +6,13 @@ from typing import Any, Optional
 
 from langchain_core.callbacks import CallbackManagerForToolRun
 from langchain_core.tools import BaseTool
+from pydantic import BaseModel, field_validator
+from azure.ai.translation.text import TextTranslationClient
+from azure.core.credentials import AzureKeyCredential
 
 logger = logging.getLogger(__name__)
 
-
-class AzureTranslateTool(BaseTool):
+class AzureTranslateTool(BaseModel):
     """
     A tool that interacts with the Azure Translator API using the SDK.
 
@@ -21,7 +23,7 @@ class AzureTranslateTool(BaseTool):
     translator-text-apis?tabs=python
     """
 
-    translate_client: Any = None
+    translate_client: Optional[TextTranslationClient] = None
     default_language: str = "en"
 
     # New class attributes
@@ -36,46 +38,27 @@ class AzureTranslateTool(BaseTool):
         "azure-ai-translation-text package."
     )
 
-    def __init__(self, **data: Any):
-        super().__init__(**data)
-        self.validate_environment()
-
-    def validate_environment(self):
+    @field_validator("text_translation_key", "text_translation_endpoint", "region", mode="before")
+    def validate_environment(cls, v, field):
         """
-        Validate that the required environment variables are set, and set up
-        the client.
+        Validate that the required environment variables are set.
         """
-        try:
-            from azure.ai.translation.text import TextTranslationClient
-            from azure.core.credentials import AzureKeyCredential
-        except ImportError:
-            raise ImportError(
-                "azure-ai-translation-text is not installed. "
-                "Run `pip install azure-ai-translation-text` to install."
-            )
+        if field.name == "text_translation_key":
+            return os.getenv("AZURE_TRANSLATE_API_KEY")
+        elif field.name == "text_translation_endpoint":
+            return os.getenv("AZURE_TRANSLATE_ENDPOINT")
+        elif field.name == "region":
+            return os.getenv("AZURE_REGION")
+        return v
 
-        # Get environment variables
-        self.text_translation_key = os.getenv("AZURE_TRANSLATE_API_KEY")
-        self.text_translation_endpoint = os.getenv("AZURE_TRANSLATE_ENDPOINT")
-        self.region = os.getenv("REGION")
-
-        if not self.text_translation_key:
-            raise ValueError(
-                "AZURE_TRANSLATE_API_KEY is missing in environment variables"
+    def setup_client(self):
+        """Sets up the translation client if it's not already set."""
+        if not self.translate_client:
+            self.translate_client = TextTranslationClient(
+                endpoint=self.text_translation_endpoint,
+                credential=AzureKeyCredential(self.text_translation_key),
+                region=self.region,
             )
-        if not self.text_translation_endpoint:
-            raise ValueError(
-                "AZURE_TRANSLATE_ENDPOINT is missing in environment variables"
-            )
-        if not self.region:
-            raise ValueError("REGION is missing in environment variables")
-
-        # Set up the translation client
-        self.translate_client = TextTranslationClient(
-            endpoint=self.text_translation_endpoint,
-            credential=AzureKeyCredential(self.text_translation_key),
-            region=self.region,
-        )
 
     def _translate_text(self, text: str, to_language: str = "en") -> str:
         """
@@ -92,8 +75,7 @@ class AzureTranslateTool(BaseTool):
             raise ValueError("Input text for translation is empty.")
 
         # Ensure that the translation client is initialized
-        if not self.translate_client:
-            self.validate_environment()
+        self.setup_client()
 
         body = [{"Text": text}]
         try:
@@ -116,8 +98,7 @@ class AzureTranslateTool(BaseTool):
 
         Args:
             query (str): The text to be translated.
-            run_manager (Optional[CallbackManagerForToolRun]):
-             A callback manager for tracking the tool run.
+            run_manager (Optional[CallbackManagerForToolRun]): A callback manager for tracking the tool run.
             to_language (str): The target language for translation.
 
         Returns:
