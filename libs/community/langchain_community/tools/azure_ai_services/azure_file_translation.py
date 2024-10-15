@@ -138,7 +138,7 @@ class AzureFileTranslateTool(BaseTool):
             RuntimeError: If the translation request fails.
         """
         if not self.translate_client:
-            values = self.validate_environment({})
+            values = self.validate_environment
             self.translate_client = values["translate_client"]
 
         if target_language is None:
@@ -154,9 +154,9 @@ class AzureFileTranslateTool(BaseTool):
                 body=request_body, to_language=[target_language]
             )
 
-            translations = response[0].translations
+            translations = response[0]["translations"]
             if translations:
-                return translations[0].text
+                return translations[0]["text"]
             return ""
         except Exception as e:
             raise RuntimeError(f"An error occurred during translation: {e}")
