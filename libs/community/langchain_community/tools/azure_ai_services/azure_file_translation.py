@@ -32,7 +32,7 @@ class AzureFileTranslateTool(BaseTool):
     target_language: str = "en"
     region: str = ""
     file_path: str = ""
-    translate_client: Any
+    translate_client: Any = None
 
     name: str = "azure_file_translation"
     description: str = """
@@ -137,14 +137,12 @@ class AzureFileTranslateTool(BaseTool):
         Raises:
             RuntimeError: If the translation request fails.
         """
-        if not self.translate_client:
-            values = self.validate_environment
-            self.translate_client = values["translate_client"]
-
         if target_language is None:
             target_language = self.target_language
         try:
             from azure.ai.translation.text.models import InputTextItem
+            from azure.ai.translation.text import TextTranslationClient
+            self.translation_client: TextTranslationClient
         except ImportError:
             raise ImportError("Run 'pip install azure-ai-translation-text'.")
 
