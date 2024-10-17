@@ -13,7 +13,7 @@ _EXAMPLES_DIR = _THIS_DIR / "examples"
 AZURE_PDF = _EXAMPLES_DIR / "test_azure.pdf"
 
 
-@pytest.mark.requires("azure-ai-translation-text")
+@pytest.mark.requires("azure.ai.translation.text")
 def test_tool_initialization(mocker: Any) -> None:
     mocker.patch("azure.core.credentials.AzureKeyCredential", autospec=True)
 
@@ -40,7 +40,7 @@ def test_tool_initialization(mocker: Any) -> None:
     assert tool.translate_client == mock_translate_client
 
 
-@pytest.mark.requires("azure-ai-translation-text")
+@pytest.mark.requires("azure.ai.translation.text")
 def test_translation_with_file(mocker: Any) -> None:
     key = "key"
     endpoint = "endpoint"
@@ -76,7 +76,7 @@ def test_translation_with_file(mocker: Any) -> None:
     assert result == expected_output
 
 
-@pytest.mark.requires("azure-ai-translation-text")
+@pytest.mark.requires("azure.ai.translation.text")
 def test_translation_with_no_file(mocker: Any) -> None:
     key = "key"
     endpoint = "endpoint"
