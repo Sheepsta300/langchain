@@ -13,20 +13,7 @@ _EXAMPLES_DIR = _THIS_DIR / "examples"
 AZURE_PDF = _EXAMPLES_DIR / "test_azure.pdf"
 
 
-def mock_unstructured_loaders(mocker):
-    mocker.patch("langchain_community.document_loaders.UnstructuredPDFLoader.load")
-    mocker.patch(
-        "langchain_community.document_loaders.UnstructuredWordDocumentLoader.load"
-    )
-    mocker.patch(
-        "langchain_community.document_loaders.UnstructuredPowerPointLoader.load"
-    )
-    mocker.patch("langchain_community.document_loaders.UnstructuredExcelLoader.load")
-    mocker.patch("langchain_community.document_loaders.UnstructuredXMLLoader.load")
-    mocker.patch("langchain_community.document_loaders.UnstructuredHTMLLoader.load")
-
-
-@pytest.mark.requires("azure-ai-translation-text")
+@pytest.mark.requires("azure.ai.translation.text")
 def test_tool_initialization(mocker: Any) -> None:
     mocker.patch("azure.core.credentials.AzureKeyCredential", autospec=True)
 
@@ -53,7 +40,7 @@ def test_tool_initialization(mocker: Any) -> None:
     assert tool.translate_client == mock_translate_client
 
 
-@pytest.mark.requires("azure-ai-translation-text")
+@pytest.mark.requires("azure.ai.translation.text")
 def test_translation_with_file(mocker: Any) -> None:
     key = "key"
     endpoint = "endpoint"
@@ -67,7 +54,16 @@ def test_translation_with_file(mocker: Any) -> None:
         return_value=mock_translate_client,
     )
 
-    mock_unstructured_loaders(mocker)
+    mocker.patch("langchain_community.document_loaders.UnstructuredPDFLoader.load")
+    mocker.patch(
+        "langchain_community.document_loaders.UnstructuredWordDocumentLoader.load"
+    )
+    mocker.patch(
+        "langchain_community.document_loaders.UnstructuredPowerPointLoader.load"
+    )
+    mocker.patch("langchain_community.document_loaders.UnstructuredExcelLoader.load")
+    mocker.patch("langchain_community.document_loaders.UnstructuredXMLLoader.load")
+    mocker.patch("langchain_community.document_loaders.UnstructuredHTMLLoader.load")
 
     tool = AzureFileTranslateTool(
         text_translation_key=key,
@@ -91,7 +87,7 @@ def test_translation_with_file(mocker: Any) -> None:
     assert result == expected_output
 
 
-@pytest.mark.requires("azure-ai-translation-text")
+@pytest.mark.requires("azure.ai.translation.text")
 def test_translation_with_no_file(mocker: Any) -> None:
     key = "key"
     endpoint = "endpoint"
@@ -105,7 +101,16 @@ def test_translation_with_no_file(mocker: Any) -> None:
         return_value=mock_translate_client,
     )
 
-    mock_unstructured_loaders(mocker)
+    mocker.patch("langchain_community.document_loaders.UnstructuredPDFLoader.load")
+    mocker.patch(
+        "langchain_community.document_loaders.UnstructuredWordDocumentLoader.load"
+    )
+    mocker.patch(
+        "langchain_community.document_loaders.UnstructuredPowerPointLoader.load"
+    )
+    mocker.patch("langchain_community.document_loaders.UnstructuredExcelLoader.load")
+    mocker.patch("langchain_community.document_loaders.UnstructuredXMLLoader.load")
+    mocker.patch("langchain_community.document_loaders.UnstructuredHTMLLoader.load")
 
     tool = AzureFileTranslateTool(
         text_translation_key=key,
