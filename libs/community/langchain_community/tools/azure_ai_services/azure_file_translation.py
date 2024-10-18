@@ -23,8 +23,8 @@ logger = logging.getLogger(__name__)
 
 class AzureFileTranslateTool(BaseTool):
     """
-    A tool that uses Azure Text Translation API to translate a text document from
-    any language into a target language.
+    A tool that uses Azure Text Translation API to translate text within a document
+    into a target language.
     """
 
     text_translation_key: str = ""
@@ -93,7 +93,6 @@ class AzureFileTranslateTool(BaseTool):
 
         file_extension = os.path.splitext(file_path)[1].lower()
 
-        # Map file extensions to loader classes
         loader_map = {
             ".pdf": UnstructuredPDFLoader,
             ".docx": UnstructuredWordDocumentLoader,
@@ -110,7 +109,6 @@ class AzureFileTranslateTool(BaseTool):
         elif loader_class is None:
             raise ValueError(f"Unsupported file type: {file_extension}")
 
-        # Load the document using the appropriate loader
         loader = loader_class(file_path)
         data = loader.load()
 
