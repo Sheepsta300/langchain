@@ -74,7 +74,9 @@ class AzureTranslateTool(BaseTool):
 
         body = [{"Text": text}]
         try:
-            response = self.translate_client.translate(body=body, to_language=[to_language])
+            response = self.translate_client.translate(
+                body=body, to_language=[to_language]
+            )
             return response[0].translations[0].text
         except Exception as e:
             logger.error("Translation failed: %s", e)
@@ -95,10 +97,10 @@ class AzureTranslateTool(BaseTool):
             raise RuntimeError(f"Translation failed: {e}")
 
     def _run(
-            self,
-            query: str,
-            run_manager: Optional[CallbackManagerForToolRun] = None,
-            to_language: str = "en",
+        self,
+        query: str,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
+        to_language: str = "en",
     ) -> str:
         """
         Run the tool to perform translation.
@@ -118,21 +120,3 @@ class AzureTranslateTool(BaseTool):
         return self._translate_text(text_to_translate, to_language)
 
 
-if __name__ == "__main__":
-    # Create an instance of AzureTranslateTool
-    translator = AzureTranslateTool()
-
-    # Test translation: English to Italian
-    sample_text = "Hello, how are you?"
-    target_language = "it"  # Italian
-
-    # Print the variables used in the test
-    print(f"Sample Text: {sample_text}")
-    print(f"Target Language: {target_language}")
-
-    try:
-        translated_text = translator._translate_text(sample_text, to_language=target_language)
-        print(f"Original text: {sample_text}")
-        print(f"Translated text: {translated_text}")
-    except Exception as e:
-        print(f"Translation error: {e}")

@@ -1,11 +1,14 @@
 import unittest
 from unittest.mock import patch, MagicMock
-from libs.community.langchain_community.tools.azure_ai_services.translate_tool import AzureTranslateTool
+from libs.community.langchain_community.tools.azure_ai_services.translate_tool import (
+    AzureTranslateTool,
+)
 
 
 class TestAzureTranslateTool(unittest.TestCase):
-
-    @patch('azure.ai.translation.text.TextTranslationClient')  # Mock the translation client
+    @patch(
+        "azure.ai.translation.text.TextTranslationClient"
+    )  # Mock the translation client
     def setUp(self, mock_translation_client):
         # Set up a mock translation client
         self.mock_translation_client = mock_translation_client
@@ -51,18 +54,17 @@ class TestAzureTranslateTool(unittest.TestCase):
 
         self.assertIn("Translation failed", str(context.exception))
 
-    @patch('azure.ai.translation.text.TextTranslationClient')
+    @patch("azure.ai.translation.text.TextTranslationClient")
     def test_validate_environment(self, mock_translation_client):
         # Test that the environment is validated and the client is initialized
         self.tool.validate_environment()
 
         # Ensure the translation client is initialized properly
         mock_translation_client.assert_called_once_with(
-            endpoint=self.tool.text_translation_endpoint,
-            credential=unittest.mock.ANY
+            endpoint=self.tool.text_translation_endpoint, credential=unittest.mock.ANY
         )
 
 
 # Run the unit tests
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
