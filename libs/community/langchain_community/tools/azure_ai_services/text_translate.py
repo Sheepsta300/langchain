@@ -11,15 +11,24 @@ from pydantic import model_validator
 logger = logging.getLogger(__name__)
 
 
-class AzureTranslateTool(BaseTool):
+class AzureAITextTranslateTool(BaseTool):
     """
     A tool that interacts with the Azure Translator API using the SDK.
 
-    This tool queries the Azure Translator API to translate text between
-    languages. It requires an API key and endpoint, which can be set up as
-    described in the Azure Translator API documentation:
-    https://learn.microsoft.com/azure/ai-services/translator/
-    translator-text-apis?tabs=python
+    Attributes:
+        text_translation_key (str):
+         The API key for the Azure Translator service.
+        text_translation_endpoint (str):
+        The endpoint for the Azure Translator service.
+        region (str): The Azure region where the Translator service is hosted.
+        translate_client (TextTranslationClient):
+        The Azure Translator client initialized with the credentials.
+        default_language (str):
+        The default language for translation (default is 'en').
+
+    This tool queries the Azure Translator API to translate text between languages.
+    Input must be text (str), and the 'to_language'
+     parameter must be a two-letter language code (e.g., 'es', 'it', 'de').
     """
 
     text_translation_key: Optional[str] = None
@@ -32,7 +41,8 @@ class AzureTranslateTool(BaseTool):
     name: str = "azure_translator_tool"
     description: str = (
         "A wrapper around Azure Translator API. Useful for translating text between "
-        "languages. Input must be text (str). "
+        "languages. Input must be text (str), and the 'to_language'"
+        " parameter must be a two-letter language code (str), e.g., 'es', 'it', 'de'."
     )
 
     @model_validator(mode="before")
@@ -47,7 +57,10 @@ class AzureTranslateTool(BaseTool):
             from azure.ai.translation.text import TextTranslationClient
             from azure.core.credentials import AzureKeyCredential
         except ImportError:
-            raise ImportError("Packages not installed")
+            raise ImportError(
+                "Azure Translator API packages are not installed. "
+                "Please install 'azure-ai-translation-text' and 'azure-core'."
+            )
 
         text_translation_key = get_from_dict_or_env(
             values, "text_translation_key", "AZURE_TRANSLATE_API_KEY"
@@ -92,9 +105,8 @@ class AzureTranslateTool(BaseTool):
                 body=body, to_language=[to_language]
             )
             return response[0].translations[0].text
-        except Exception as e:
-            logger.error("Translation failed: %s", e)
-            raise RuntimeError(f"Translation failed: {e}")
+        except Exception:
+            raise
 
     def _run(
         self,

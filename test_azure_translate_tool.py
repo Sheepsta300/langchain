@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import patch, MagicMock
-from libs.community.langchain_community.tools.azure_ai_services.translate_tool import (
-    AzureTranslateTool,
+from libs.community.langchain_community.tools.azure_ai_services.text_translate import (
+    AzureAITextTranslateTool,
 )
 
 
@@ -15,7 +15,7 @@ class TestAzureTranslateTool(unittest.TestCase):
         self.mock_translation_instance = mock_translation_client.return_value
 
         # Create an instance of the AzureTranslateTool
-        self.tool = AzureTranslateTool()
+        self.tool = AzureAITextTranslateTool()
 
         # Mock environment variables
         self.tool.text_translation_key = "fake_api_key"
