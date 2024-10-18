@@ -14,6 +14,7 @@ AZURE_PDF = _EXAMPLES_DIR / "test_azure.pdf"
 
 
 @pytest.mark.requires("azure.ai.translation.text")
+@pytest.mark.requires("unstructured")
 def test_tool_initialization(mocker: Any) -> None:
     mocker.patch("azure.core.credentials.AzureKeyCredential", autospec=True)
 
@@ -41,6 +42,7 @@ def test_tool_initialization(mocker: Any) -> None:
 
 
 @pytest.mark.requires("azure.ai.translation.text")
+@pytest.mark.requires("unstructured")
 def test_translation_with_file(mocker: Any) -> None:
     key = "key"
     endpoint = "endpoint"
@@ -77,6 +79,7 @@ def test_translation_with_file(mocker: Any) -> None:
 
 
 @pytest.mark.requires("azure.ai.translation.text")
+@pytest.mark.requires("unstructured")
 def test_translation_with_no_file(mocker: Any) -> None:
     key = "key"
     endpoint = "endpoint"
