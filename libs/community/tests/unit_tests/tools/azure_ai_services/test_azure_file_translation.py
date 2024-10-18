@@ -54,22 +54,15 @@ def test_translation_with_file(mocker: Any) -> None:
         return_value=mock_translate_client,
     )
 
-    mocker.patch("langchain_community.document_loaders.UnstructuredPDFLoader.load")
-    mocker.patch(
-        "langchain_community.document_loaders.UnstructuredWordDocumentLoader.load"
-    )
-    mocker.patch(
-        "langchain_community.document_loaders.UnstructuredPowerPointLoader.load"
-    )
-    mocker.patch("langchain_community.document_loaders.UnstructuredExcelLoader.load")
-    mocker.patch("langchain_community.document_loaders.UnstructuredXMLLoader.load")
-    mocker.patch("langchain_community.document_loaders.UnstructuredHTMLLoader.load")
-
     tool = AzureFileTranslateTool(
         text_translation_key=key,
         text_translation_endpoint=endpoint,
         region=region,
         translate_client=mock_translate_client,
+    )
+
+    mocker.patch.object(
+        tool, "_read_text_from_file", return_value="Hello, my name is Azure"
     )
 
     mock_translate_client.translate.return_value = [
@@ -101,22 +94,15 @@ def test_translation_with_no_file(mocker: Any) -> None:
         return_value=mock_translate_client,
     )
 
-    mocker.patch("langchain_community.document_loaders.UnstructuredPDFLoader.load")
-    mocker.patch(
-        "langchain_community.document_loaders.UnstructuredWordDocumentLoader.load"
-    )
-    mocker.patch(
-        "langchain_community.document_loaders.UnstructuredPowerPointLoader.load"
-    )
-    mocker.patch("langchain_community.document_loaders.UnstructuredExcelLoader.load")
-    mocker.patch("langchain_community.document_loaders.UnstructuredXMLLoader.load")
-    mocker.patch("langchain_community.document_loaders.UnstructuredHTMLLoader.load")
-
     tool = AzureFileTranslateTool(
         text_translation_key=key,
         text_translation_endpoint=endpoint,
         region=region,
         translate_client=mock_translate_client,
+    )
+
+    mocker.patch.object(
+        tool, "_read_text_from_file", side_effect=ValueError("File not found")
     )
 
     file_input: str = ""
