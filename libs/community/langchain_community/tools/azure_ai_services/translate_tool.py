@@ -55,7 +55,7 @@ class AzureTranslateTool(BaseTool):
         text_translation_endpoint = get_from_dict_or_env(
             values, "text_translation_endpoint", "AZURE_TRANSLATE_ENDPOINT"
         )
-        region = get_from_dict_or_env(values, "region", "AZURE_TRANSLATE_REGION")
+        region = get_from_dict_or_env(values, "region", "REGION")
 
         values["translate_client"] = TextTranslationClient(
             endpoint=text_translation_endpoint,
@@ -68,14 +68,17 @@ class AzureTranslateTool(BaseTool):
     def _translate_text(self, text: str, to_language: str = "en") -> str:
         """
         Perform text translation using the Azure Translator API.
-
-        Args:
-            text (str): The text to be translated.
-            to_language (str): The target language to translate to.
-
-        Returns:
-            str: The translation result.
         """
+        if not text:
+            raise ValueError("Input text for translation is empty.")
+
+        body = [{"Text": text}]
+        try:
+            response = self.translate_client.translate(body=body, to_language=[to_language])
+            return response[0].translations[0].text
+        except Exception as e:
+            logger.error("Translation failed: %s", e)
+            raise RuntimeError(f"Translation failed: {e}")
 
         from azure.ai.translation.text import TextTranslationClient
 
@@ -92,21 +95,44 @@ class AzureTranslateTool(BaseTool):
             raise RuntimeError(f"Translation failed: {e}")
 
     def _run(
-        self,
-        query: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
-        to_language: str = "en",
+            self,
+            query: str,
+            run_manager: Optional[CallbackManagerForToolRun] = None,
+            to_language: str = "en",
     ) -> str:
         """
         Run the tool to perform translation.
 
         Args:
             query (str): The text to be translated.
-            run_manager (Optional[CallbackManagerForToolRun]): A
-            callback manager for tracking the tool run.
+            run_manager (Optional[CallbackManagerForToolRun]):
+            A callback manager for tracking the tool run.
             to_language (str): The target language for translation.
 
         Returns:
             str: The translated text.
         """
-        return self._translate_text(query, to_language)
+        # Ensure only the text (not the full query dictionary)
+        # is passed to the translation function
+        text_to_translate = query
+        return self._translate_text(text_to_translate, to_language)
+
+
+if __name__ == "__main__":
+    # Create an instance of AzureTranslateTool
+    translator = AzureTranslateTool()
+
+    # Test translation: English to Italian
+    sample_text = "Hello, how are you?"
+    target_language = "it"  # Italian
+
+    # Print the variables used in the test
+    print(f"Sample Text: {sample_text}")
+    print(f"Target Language: {target_language}")
+
+    try:
+        translated_text = translator._translate_text(sample_text, to_language=target_language)
+        print(f"Original text: {sample_text}")
+        print(f"Translated text: {translated_text}")
+    except Exception as e:
+        print(f"Translation error: {e}")
