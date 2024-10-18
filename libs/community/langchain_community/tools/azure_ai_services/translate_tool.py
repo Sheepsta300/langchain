@@ -103,7 +103,8 @@ class AzureTranslateTool(BaseModel):
 
         Args:
             query (str): The text to be translated.
-            run_manager (Optional[CallbackManagerForToolRun]): A callback manager for tracking the tool run.
+            run_manager (Optional[CallbackManagerForToolRun]):
+             A callback manager for tracking the tool run.
             to_language (str): The target language for translation.
 
         Returns:
