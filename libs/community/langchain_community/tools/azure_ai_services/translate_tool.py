@@ -118,5 +118,3 @@ class AzureTranslateTool(BaseTool):
         # is passed to the translation function
         text_to_translate = query
         return self._translate_text(text_to_translate, to_language)
-
-
