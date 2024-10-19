@@ -27,11 +27,9 @@ class AzureFileTranslateTool(BaseTool):
     into a target language.
     """
 
-    text_translation_key: str = ""
-    text_translation_endpoint: str = ""
-    target_language: str = "en"
-    region: str = ""
-    file_path: str = ""
+    text_translation_key: Optional[str] = None
+    text_translation_endpoint: Optional[str] = None
+    region: Optional[str] = None
     translate_client: Any = None
 
     name: str = "azure_file_translation"
@@ -40,6 +38,8 @@ class AzureFileTranslateTool(BaseTool):
         translate a document into a specific language.
         It reads the text from a file, processes it,
         and then outputs with the desired language.
+        Input must be a file path (str) and the input language
+        should be a 2 letter (str) country code (en, de, it).
         """
 
     @model_validator(mode="before")
@@ -151,17 +151,20 @@ class AzureFileTranslateTool(BaseTool):
 
             translations = response[0]["translations"]
             if translations:
-                return translations[0]["text"]
+                return str(translations[0]["text"])
             return ""
         except Exception as e:
             raise RuntimeError(f"An error occurred during translation: {e}")
 
     def _run(
-        self, query: str, run_manager: Optional[CallbackManagerForToolRun] = None
+        self,
+        query: str,
+        to_language: str = "en",
+        run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """ "Run the tool"""
         try:
-            text = self._read_text_from_file(self.file_path or query)
-            return self._translate_text(text)
+            text = self._read_text_from_file(query)
+            return self._translate_text(text, to_language)
         except Exception as e:
             raise RuntimeError(f"Error while running AzureFileTranslateTool: {e}")
