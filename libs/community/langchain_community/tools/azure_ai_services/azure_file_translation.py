@@ -135,8 +135,6 @@ class AzureFileTranslateTool(BaseTool):
         Raises:
             RuntimeError: If the translation request fails.
         """
-        if target_language is None:
-            target_language = self.target_language
 
         from azure.ai.translation.text import TextTranslationClient
         from azure.ai.translation.text.models import InputTextItem
